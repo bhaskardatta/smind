@@ -225,6 +225,7 @@ notificationStyles.textContent = `
 document.head.appendChild(notificationStyles);
 
 // ===== Smooth Scroll for Internal Links =====
+// ===== Smooth Scroll for Internal Links =====
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
     e.preventDefault();
@@ -237,3 +238,57 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     }
   });
 });
+
+// ===== Theme Manager =====
+const themeToggle = document.getElementById('themeToggle');
+const themeToggleMobile = document.getElementById('themeToggleMobile');
+const themeIcons = document.querySelectorAll('.theme-icon, .theme-icon-mobile');
+
+// Check for saved theme or system preference
+const savedTheme = localStorage.getItem('theme');
+const systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+let currentTheme = savedTheme || 'dark'; // Default to dark if no preference
+
+// Apply theme on load
+applyTheme(currentTheme);
+
+function applyTheme(theme) {
+  // Update DOM
+  document.documentElement.setAttribute('data-theme', theme);
+
+  // Update Icons
+  // If Dark Theme -> Show Sun (light_mode) to switch to light
+  // If Light Theme -> Show Moon (dark_mode) to switch to dark
+  const iconName = theme === 'dark' ? 'light_mode' : 'dark_mode';
+
+  themeIcons.forEach(icon => {
+    icon.textContent = iconName;
+  });
+
+  // Update text for mobile button
+  const mobileText = document.querySelector('.theme-toggle-mobile span:last-child');
+  if (mobileText) {
+    mobileText.textContent = theme === 'dark' ? 'Switch to Light' : 'Switch to Dark';
+  }
+
+  // Save preference
+  localStorage.setItem('theme', theme);
+  currentTheme = theme;
+}
+
+// Event Listeners
+function toggleTheme() {
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+}
+
+if (themeToggle) {
+  themeToggle.addEventListener('click', toggleTheme);
+}
+
+if (themeToggleMobile) {
+  themeToggleMobile.addEventListener('click', () => {
+    toggleTheme();
+    // Don't close menu immediately so user can see the change
+  });
+}
