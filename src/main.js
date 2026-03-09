@@ -12,25 +12,31 @@ const inquiryForm = document.getElementById('inquiryForm');
 
 // ===== Initialize AOS =====
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize AOS
   if (typeof AOS !== 'undefined') {
     AOS.init({
       duration: 800,
       easing: 'ease-out-cubic',
       once: true,
-      offset: 50,
+      offset: 60,
       delay: 0,
       disable: false
     });
   }
 
-  // Set initial active navigation
   setActiveNavLink();
-
-  // Handle initial scroll state
   handleHeaderScroll();
 
-  console.log('Sri Manjunatheswara Industries website initialized');
+  // Hide scroll indicator on scroll
+  const scrollIndicator = document.querySelector('.scroll-indicator');
+  if (scrollIndicator) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 100) {
+        scrollIndicator.style.opacity = '0';
+      } else {
+        scrollIndicator.style.opacity = '';
+      }
+    }, { passive: true });
+  }
 });
 
 // Refresh AOS after all images load
@@ -55,7 +61,7 @@ function handleHeaderScroll() {
   lastScrollY = currentScrollY;
 }
 
-window.addEventListener('scroll', handleHeaderScroll);
+window.addEventListener('scroll', handleHeaderScroll, { passive: true });
 
 // ===== Mobile Menu Toggle =====
 function toggleMobileMenu() {
@@ -95,18 +101,16 @@ function setActiveNavLink() {
   });
 }
 
-window.addEventListener('scroll', setActiveNavLink);
+window.addEventListener('scroll', setActiveNavLink, { passive: true });
 
 // ===== Service Tabs =====
 tabBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     const targetTab = btn.getAttribute('data-tab');
 
-    // Update active button
     tabBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    // Update active panel
     servicePanels.forEach(panel => {
       panel.classList.remove('active');
       if (panel.id === targetTab) {
@@ -123,104 +127,101 @@ inquiryForm.addEventListener('submit', function (e) {
   const formData = new FormData(this);
   const data = Object.fromEntries(formData);
 
-  // Validate required fields
   if (!data.name || !data.email || !data.phone || !data.message) {
     showNotification('Please fill in all required fields.', 'error');
     return;
   }
 
-  // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(data.email)) {
     showNotification('Please enter a valid email address.', 'error');
     return;
   }
 
-  // Validate phone (basic Indian phone validation)
   const phoneRegex = /^[6-9]\d{9}$/;
-  const cleanPhone = data.phone.replace(/[\s-+]/g, '').replace(/^91/, '');
+  const cleanPhone = data.phone.replace(/[\s\-+]/g, '').replace(/^91/, '');
   if (!phoneRegex.test(cleanPhone)) {
-    showNotification('Please enter a valid phone number.', 'error');
+    showNotification('Please enter a valid Indian phone number.', 'error');
     return;
   }
 
-  // Show success message
-  showNotification('Thank you! Your inquiry has been sent. We will contact you soon.', 'success');
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span>Sending...</span><span class="material-symbols-outlined">hourglass_empty</span>';
 
-  // Reset form
-  this.reset();
-
-  // Log form data (in production, this would be sent to a server)
-  console.log('Inquiry submitted:', data);
+  // Simulate send (in production, send to server)
+  setTimeout(() => {
+    showNotification('Thank you! Your inquiry has been sent. We will contact you soon.', 'success');
+    this.reset();
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<span>Send Inquiry</span><span class="material-symbols-outlined">send</span>';
+  }, 800);
 });
 
 // ===== Notification System =====
 function showNotification(message, type = 'success') {
-  // Remove existing notification
   const existingNotification = document.querySelector('.notification');
   if (existingNotification) {
     existingNotification.remove();
   }
 
-  // Create notification element
   const notification = document.createElement('div');
   notification.className = `notification notification-${type}`;
   notification.innerHTML = `
-        <span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : 'error'}</span>
-        <span>${message}</span>
-    `;
+    <span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : 'error'}</span>
+    <span>${message}</span>
+    <button class="notif-close" onclick="this.parentElement.remove()">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  `;
 
-  // Add styles
   notification.style.cssText = `
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 16px 24px;
-        background: ${type === 'success' ? '#10b981' : '#ef4444'};
-        color: white;
-        border-radius: 10px;
-        font-size: 14px;
-        font-weight: 500;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        z-index: 10000;
-        animation: slideInRight 0.4s ease forwards;
-    `;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: ${type === 'success' ? '#10b981' : '#ef4444'};
+    color: white;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 10000;
+    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    max-width: 360px;
+  `;
+
+  const closeBtn = notification.querySelector('.notif-close');
+  if (closeBtn) {
+    closeBtn.style.cssText = 'background: none; border: none; cursor: pointer; color: white; display: flex; align-items: center; margin-left: auto; opacity: 0.7;';
+    closeBtn.addEventListener('mouseenter', () => closeBtn.style.opacity = '1');
+    closeBtn.addEventListener('mouseleave', () => closeBtn.style.opacity = '0.7');
+  }
 
   document.body.appendChild(notification);
 
-  // Remove after 5 seconds
   setTimeout(() => {
-    notification.style.animation = 'slideOutRight 0.4s ease forwards';
-    setTimeout(() => notification.remove(), 400);
+    if (notification.parentElement) {
+      notification.style.animation = 'slideOutRight 0.3s ease forwards';
+      setTimeout(() => notification.remove(), 300);
+    }
   }, 5000);
 }
 
-// Add notification animations
+// Notification animations
 const notificationStyles = document.createElement('style');
 notificationStyles.textContent = `
-    @keyframes slideInRight {
-        from {
-            opacity: 0;
-            transform: translateX(100px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-    @keyframes slideOutRight {
-        from {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        to {
-            opacity: 0;
-            transform: translateX(100px);
-        }
-    }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(120px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideOutRight {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(120px); }
+  }
 `;
 document.head.appendChild(notificationStyles);
 
